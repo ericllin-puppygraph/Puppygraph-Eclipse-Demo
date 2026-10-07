@@ -1,0 +1,24 @@
+name: puppygraph-supply-chain-demo
+
+services:
+  puppygraph:
+    image: puppygraph/puppygraph:1.13.0
+    environment:
+      PUPPYGRAPH_USERNAME: puppygraph
+      PUPPYGRAPH_PASSWORD: puppygraph123
+      QUERY_TIMEOUT: 5m
+      STORAGE_PATH_ROOT: /data/storage
+    ports:
+      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:8182:8182"
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - type: bind
+        source: ./data/supply_chain_demo.db
+        target: /home/share/supply_chain_demo.db
+        bind:
+          create_host_path: false
+      - puppygraph-storage:/data/storage
+
+volumes:
+  puppygraph-storage:

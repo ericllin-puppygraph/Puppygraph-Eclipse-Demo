@@ -1,0 +1,217 @@
+{
+  "catalog": [
+    {
+      "name": "duckdb_data",
+      "type": "duckdb",
+      "jdbc": {
+        "jdbcUri": "jdbc:duckdb:/home/share/supply_chain_demo.db",
+        "driverClass": "org.duckdb.DuckDBDriver",
+        "driverUrl": "https://repo.maven.apache.org/maven2/org/duckdb/duckdb_jdbc/1.4.3.0/duckdb_jdbc-1.4.3.0.jar"
+      }
+    }
+  ],
+  "node": [
+    {
+      "label": "part",
+      "dataSourceGroup": {
+        "externalDataSource": {
+          "enabled": true,
+          "catalog": "duckdb_data",
+          "schema": "supply_chain",
+          "table": "part",
+          "mappedField": [
+            {
+              "sourceFieldName": "part_id",
+              "targetFieldName": "part_id"
+            },
+            {
+              "sourceFieldName": "name",
+              "targetFieldName": "name"
+            },
+            {
+              "sourceFieldName": "country",
+              "targetFieldName": "country"
+            },
+            {
+              "sourceFieldName": "manufacturing_date",
+              "targetFieldName": "manufacturing_date"
+            },
+            {
+              "sourceFieldName": "business_partner_id",
+              "targetFieldName": "business_partner_id"
+            },
+            {
+              "sourceFieldName": "manufacturer_part_id",
+              "targetFieldName": "manufacturer_part_id"
+            },
+            {
+              "sourceFieldName": "record_type",
+              "targetFieldName": "record_type"
+            },
+            {
+              "sourceFieldName": "is_placeholder",
+              "targetFieldName": "is_placeholder"
+            }
+          ]
+        }
+      },
+      "id": [
+        {
+          "name": "part_id",
+          "type": "STRING"
+        }
+      ],
+      "attribute": [
+        {
+          "name": "part_id",
+          "type": "STRING"
+        },
+        {
+          "name": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "country",
+          "type": "STRING"
+        },
+        {
+          "name": "manufacturing_date",
+          "type": "STRING"
+        },
+        {
+          "name": "business_partner_id",
+          "type": "STRING"
+        },
+        {
+          "name": "manufacturer_part_id",
+          "type": "STRING"
+        },
+        {
+          "name": "record_type",
+          "type": "STRING"
+        },
+        {
+          "name": "is_placeholder",
+          "type": "BOOLEAN"
+        }
+      ]
+    }
+  ],
+  "edge": [
+    {
+      "label": "contains",
+      "dataSourceGroup": {
+        "externalDataSource": {
+          "enabled": true,
+          "catalog": "duckdb_data",
+          "schema": "supply_chain",
+          "table": "contains",
+          "mappedField": [
+            {
+              "sourceFieldName": "edge_id",
+              "targetFieldName": "edge_id"
+            },
+            {
+              "sourceFieldName": "parent_id",
+              "targetFieldName": "parent_id"
+            },
+            {
+              "sourceFieldName": "child_id",
+              "targetFieldName": "child_id"
+            },
+            {
+              "sourceFieldName": "quantity",
+              "targetFieldName": "quantity"
+            },
+            {
+              "sourceFieldName": "unit",
+              "targetFieldName": "unit"
+            },
+            {
+              "sourceFieldName": "child_business_partner_id",
+              "targetFieldName": "child_business_partner_id"
+            },
+            {
+              "sourceFieldName": "has_alternatives",
+              "targetFieldName": "has_alternatives"
+            },
+            {
+              "sourceFieldName": "source_model",
+              "targetFieldName": "source_model"
+            },
+            {
+              "sourceFieldName": "source_model_index",
+              "targetFieldName": "source_model_index"
+            },
+            {
+              "sourceFieldName": "source_child_index",
+              "targetFieldName": "source_child_index"
+            }
+          ]
+        }
+      },
+      "id": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        }
+      ],
+      "attribute": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        },
+        {
+          "name": "parent_id",
+          "type": "STRING"
+        },
+        {
+          "name": "child_id",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "DOUBLE"
+        },
+        {
+          "name": "unit",
+          "type": "STRING"
+        },
+        {
+          "name": "child_business_partner_id",
+          "type": "STRING"
+        },
+        {
+          "name": "has_alternatives",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "source_model",
+          "type": "STRING"
+        },
+        {
+          "name": "source_model_index",
+          "type": "INT"
+        },
+        {
+          "name": "source_child_index",
+          "type": "INT"
+        }
+      ],
+      "fromNodeLabel": "part",
+      "toNodeLabel": "part",
+      "fromKey": [
+        {
+          "name": "parent_id",
+          "type": "STRING"
+        }
+      ],
+      "toKey": [
+        {
+          "name": "child_id",
+          "type": "STRING"
+        }
+      ]
+    }
+  ]
+}
