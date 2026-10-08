@@ -193,6 +193,33 @@ The `WHERE` conditions select specific records by ID, keeping the result small d
 
 This demonstrates how assembly and design data can be explored together. It does **not** identify a material batch actually used in the cell or prove that the assembly complies with the design.
 
+### 6. Explore dependencies on single production sites
+
+File: [`queries/06-single-site-dependencies.cypher`](queries/06-single-site-dependencies.cypher)
+
+**Question:** Which components have only one recorded production site,
+and which higher-level assemblies depend on them?
+
+The query finds part types linked to exactly one usable site, then traces
+their dependencies upward through as many as five assembly levels.
+It returns both the dependency paths and the production-site connections.
+
+Use the graph view to follow a component toward the assemblies that
+require it. If an upstream assembly also has only one recorded site,
+its production connection appears too: the query checks every part type.
+
+For example, the cell, module, battery, and Vehicle Model A all connect
+to site `BPNS000004711DMY`. Their cathode-material dependency connects
+to a different site, `BPNS00000003B0Q0`.
+
+This highlights where a site outage could affect several levels of
+production. In this dataset, 40 part types have one usable recorded site,
+so the result covers much of the planned graph.
+
+“Only one recorded site” does not prove that no alternative producer
+exists. These are planned associations; actual disruption also depends
+on inventory, available alternatives, and production capacity.
+
 ## Understanding the data
 
 Both datasets are synthetic test data from Eclipse Tractus-X. Original filenames, names, IDs, and relationships are preserved, including repeated “Mirror left” names and implausible assembly combinations.
