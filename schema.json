@@ -95,6 +95,75 @@
           "type": "BOOLEAN"
         }
       ]
+    },
+    {
+      "label": "part_type",
+      "dataSourceGroup": {
+        "externalDataSource": {
+          "enabled": true,
+          "catalog": "duckdb_data",
+          "schema": "supply_chain",
+          "table": "part_type",
+          "mappedField": [
+            {
+              "sourceFieldName": "type_id",
+              "targetFieldName": "type_id"
+            },
+            {
+              "sourceFieldName": "name",
+              "targetFieldName": "name"
+            },
+            {
+              "sourceFieldName": "business_partner_id",
+              "targetFieldName": "business_partner_id"
+            },
+            {
+              "sourceFieldName": "manufacturer_part_id",
+              "targetFieldName": "manufacturer_part_id"
+            },
+            {
+              "sourceFieldName": "classification",
+              "targetFieldName": "classification"
+            },
+            {
+              "sourceFieldName": "source_model",
+              "targetFieldName": "source_model"
+            }
+          ]
+        }
+      },
+      "id": [
+        {
+          "name": "type_id",
+          "type": "STRING"
+        }
+      ],
+      "attribute": [
+        {
+          "name": "type_id",
+          "type": "STRING"
+        },
+        {
+          "name": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "business_partner_id",
+          "type": "STRING"
+        },
+        {
+          "name": "manufacturer_part_id",
+          "type": "STRING"
+        },
+        {
+          "name": "classification",
+          "type": "STRING"
+        },
+        {
+          "name": "source_model",
+          "type": "STRING"
+        }
+      ]
     }
   ],
   "edge": [
@@ -209,6 +278,204 @@
       "toKey": [
         {
           "name": "child_id",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "label": "planned_contains",
+      "dataSourceGroup": {
+        "externalDataSource": {
+          "enabled": true,
+          "catalog": "duckdb_data",
+          "schema": "supply_chain",
+          "table": "planned_contains",
+          "mappedField": [
+            {
+              "sourceFieldName": "edge_id",
+              "targetFieldName": "edge_id"
+            },
+            {
+              "sourceFieldName": "parent_id",
+              "targetFieldName": "parent_id"
+            },
+            {
+              "sourceFieldName": "child_id",
+              "targetFieldName": "child_id"
+            },
+            {
+              "sourceFieldName": "quantity",
+              "targetFieldName": "quantity"
+            },
+            {
+              "sourceFieldName": "unit",
+              "targetFieldName": "unit"
+            },
+            {
+              "sourceFieldName": "child_business_partner_id",
+              "targetFieldName": "child_business_partner_id"
+            },
+            {
+              "sourceFieldName": "valid_from",
+              "targetFieldName": "valid_from"
+            },
+            {
+              "sourceFieldName": "valid_to",
+              "targetFieldName": "valid_to"
+            },
+            {
+              "sourceFieldName": "source_model",
+              "targetFieldName": "source_model"
+            },
+            {
+              "sourceFieldName": "source_model_index",
+              "targetFieldName": "source_model_index"
+            },
+            {
+              "sourceFieldName": "source_child_index",
+              "targetFieldName": "source_child_index"
+            }
+          ]
+        }
+      },
+      "id": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        }
+      ],
+      "attribute": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        },
+        {
+          "name": "parent_id",
+          "type": "STRING"
+        },
+        {
+          "name": "child_id",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "DOUBLE"
+        },
+        {
+          "name": "unit",
+          "type": "STRING"
+        },
+        {
+          "name": "child_business_partner_id",
+          "type": "STRING"
+        },
+        {
+          "name": "valid_from",
+          "type": "STRING"
+        },
+        {
+          "name": "valid_to",
+          "type": "STRING"
+        },
+        {
+          "name": "source_model",
+          "type": "STRING"
+        },
+        {
+          "name": "source_model_index",
+          "type": "INT"
+        },
+        {
+          "name": "source_child_index",
+          "type": "INT"
+        }
+      ],
+      "fromNodeLabel": "part_type",
+      "toNodeLabel": "part_type",
+      "fromKey": [
+        {
+          "name": "parent_id",
+          "type": "STRING"
+        }
+      ],
+      "toKey": [
+        {
+          "name": "child_id",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "label": "matches_type",
+      "dataSourceGroup": {
+        "externalDataSource": {
+          "enabled": true,
+          "catalog": "duckdb_data",
+          "schema": "supply_chain",
+          "table": "part_type_match",
+          "mappedField": [
+            {
+              "sourceFieldName": "edge_id",
+              "targetFieldName": "edge_id"
+            },
+            {
+              "sourceFieldName": "part_id",
+              "targetFieldName": "part_id"
+            },
+            {
+              "sourceFieldName": "type_id",
+              "targetFieldName": "type_id"
+            },
+            {
+              "sourceFieldName": "match_basis",
+              "targetFieldName": "match_basis"
+            },
+            {
+              "sourceFieldName": "is_inferred",
+              "targetFieldName": "is_inferred"
+            }
+          ]
+        }
+      },
+      "id": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        }
+      ],
+      "attribute": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        },
+        {
+          "name": "part_id",
+          "type": "STRING"
+        },
+        {
+          "name": "type_id",
+          "type": "STRING"
+        },
+        {
+          "name": "match_basis",
+          "type": "STRING"
+        },
+        {
+          "name": "is_inferred",
+          "type": "BOOLEAN"
+        }
+      ],
+      "fromNodeLabel": "part",
+      "toNodeLabel": "part_type",
+      "fromKey": [
+        {
+          "name": "part_id",
+          "type": "STRING"
+        }
+      ],
+      "toKey": [
+        {
+          "name": "type_id",
           "type": "STRING"
         }
       ]

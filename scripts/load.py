@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and verify the demo database; run from any working directory."""
+"""Build and validate the bundled snapshots in one transaction."""
 import os
 from pathlib import Path
 import sys
@@ -15,17 +15,27 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     os.chdir(ROOT)
     output = ROOT / 'data' / 'supply_chain_demo.db'
-    # load.sql is transactional: failed extraction rolls back table changes.
-    # Do not run while PuppyGraph is using this database.
+    # Stop PuppyGraph before opening this database for writing.
     with duckdb.connect(str(output)) as connection:
-        connection.execute((ROOT / 'scripts' / 'load.sql').read_text())
-        connection.execute((ROOT / 'scripts' / 'validate.sql').read_text())
-        parts, placeholders = connection.execute(
-            'SELECT count(*), count(*) FILTER (WHERE is_placeholder) '
-            'FROM supply_chain.part'
-        ).fetchone()
-        edges = connection.execute('SELECT count(*) FROM supply_chain.contains').fetchone()[0]
-    print(f'Validation passed: {parts} parts ({placeholders} placeholders), {edges} relationships.')
+        connection.execute('BEGIN TRANSACTION')
+        try:
+            connection.execute((ROOT / 'scripts' / 'load.sql').read_text())
+            connection.execute((ROOT / 'scripts' / 'validate.sql').read_text())
+            counts = {
+                table: connection.execute(f'SELECT count(*) FROM supply_chain.{table}').fetchone()[0]
+                for table in ('part', 'contains', 'part_type', 'planned_contains', 'part_type_match')
+            }
+            placeholders = connection.execute(
+                'SELECT count(*) FROM supply_chain.part WHERE is_placeholder'
+            ).fetchone()[0]
+            connection.execute('COMMIT')
+        except Exception:
+            connection.execute('ROLLBACK')
+            raise
+    print('Validation passed:')
+    print(f"  {counts['part']} parts ({placeholders} placeholders), {counts['contains']} as-built relationships")
+    print(f"  {counts['part_type']} planned types, {counts['planned_contains']} planned relationships")
+    print(f"  {counts['part_type_match']} inferred instance-to-type matches")
     print(f'Database: {output}')
 
 
