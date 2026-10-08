@@ -111,29 +111,39 @@ File: [`queries/03-planned-dependencies.cypher`](queries/03-planned-dependencies
 
 **Question:** What components and materials do vehicle models share, and where is their production planned?
 
-The first query follows every dependency branch for Models A, B, and C, up to five levels deep. Explore batteries, gearboxes, electronics, and tires, then follow their dependencies to materials such as sealant, plastics, glue, and natural rubber. Models A and B share gearbox and ECU types; Models B and C share a tire type.
-
-The second query adds production sites:
-
 ```cypher
-MATCH dependencies = (vehicle:part_type)-[:planned_contains*0..5]->(component:part_type)
+MATCH dependencies = (vehicle:part_type)
+                     -[:planned_contains*0..5]->(component:part_type)
 WHERE vehicle.name IN [
   'Vehicle Model A',
   'Vehicle Model B',
   'Vehicle Model C'
 ]
-OPTIONAL MATCH production = (component)-[:planned_production_at]->(site:site)
+OPTIONAL MATCH production =
+  (component)-[:planned_production_at]->(site:site)
 WHERE site.is_suspect = false
 RETURN dependencies, production;
 ```
 
-`dependencies` follows each model's component and material requirements. The `0..5` range includes the vehicle itself so its own site can appear. `production` adds each reached type's planned production site. `OPTIONAL MATCH` keeps the dependency path even when no usable site is recorded.
+This query follows every dependency branch for Models A, B, and C up to
+five levels deep, then adds the production sites recorded for each type.
+The zero-hop starting point includes the vehicles themselves.
 
-Use the graph view to see components converge on shared site nodes. For example, the battery, module, and cell link to `BPNS000004711DMY`, while cathode material links to `BPNS00000003B0Q0`. Site labels use the original IDs because the source does not supply factory names in these records.
+Use the graph view to explore batteries, gearboxes, electronics, and tires,
+along with their lower-level components and materials. Shared dependencies
+connect the models: Models A and B share gearbox and ECU types, while
+Models B and C share a tire type.
 
-The third query returns a table of vehicle models, component IDs and names, site IDs, and validity dates. It removes repeated assignments caused by reaching a component along several paths.
+Site nodes show where production is planned. For example, the battery,
+module, and cell share site `BPNS000004711DMY`, while cathode material
+links to `BPNS00000003B0Q0`.
 
-These links mean **planned production at a site**. They do not establish site ownership, current production, or shipments between factories. Quantities on `planned_contains` remain direct requirements; these three queries do not calculate total material requirements.
+`OPTIONAL MATCH` preserves component paths when no usable site is recorded.
+The suspect source ID `BPN` is excluded from the site visualization.
+
+These are planned production associations, not evidence of current
+production or shipments between factories. Relationship quantities describe
+direct requirements; this query does not calculate total material needs.
 
 ### 4. See which parts match each planned type
 
