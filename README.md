@@ -101,24 +101,37 @@ The first query lists 25 supplied parts with their IDs, names, and countries. Th
 
 Use this to understand the records and edge direction. Repeated names identify different records, so use IDs to distinguish them. This is a general sample; the later queries select specific paths for a clearer example.
 
-### 3. Follow a planned vehicle's material dependency
+### 3. Explore vehicle components and material dependencies
 
 File: [`queries/03-planned-dependencies.cypher`](queries/03-planned-dependencies.cypher)
 
-**Question:** Which planned components connect Vehicle Model A to cathode material?
+**Question:** What components and materials do different vehicle models depend on, and which dependencies do they share?
 
 ```cypher
-MATCH path = (vehicle:part_type)-[:planned_contains*1..5]->(material:part_type)
-WHERE vehicle.type_id = 'urn:uuid:0733946c-59c6-41ae-9570-cb43a6e4c79e'
-  AND material.type_id = 'urn:uuid:4f7b1cf2-a598-4027-bc78-63f6d8e55699'
+MATCH path = (product:part_type)-[:planned_contains*1..5]->(dependency:part_type)
+WHERE product.name IN [
+  'Vehicle Model A',
+  'Vehicle Model B',
+  'Vehicle Model C'
+]
 RETURN path;
 ```
 
-`MATCH` follows outgoing planned relationships between two selected types. The `*1..5` allows a path of one to five edges, so the query can pass through intermediate components. `RETURN path` includes those components and edges in the graph result.
+The query starts from three vehicle models and follows every outgoing
+`planned_contains` branch up to five levels deep. Returning the paths
+displays the intermediate components and their connections in the graph view.
 
-The result is **Vehicle Model A → OEM A High Voltage Battery → HV Modul → ZB ZELLE → N Tier A CathodeMaterial**. It describes a design dependency, with a module and cell between the battery and material.
+Explore branches covering batteries, gearboxes, electronics, and tires,
+then follow them down to dependencies such as cathode material, sealant,
+plastics, glue, and natural rubber.
 
-The file's second query examines the cell-to-material edge directly and returns its planned quantity, unit, and validity dates.
+Shared components connect the models: Models A and B share gearbox and
+ECU types, while Models B and C share a tire type. Each arrow points from
+a product or component to something it requires.
+
+Relationships include `quantity` and `unit` properties. These describe
+direct requirements; the query does not calculate total material
+requirements across multiple levels.
 
 ### 4. See which parts match each planned type
 
