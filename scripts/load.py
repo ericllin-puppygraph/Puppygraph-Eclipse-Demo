@@ -23,10 +23,14 @@ def main():
             connection.execute((ROOT / 'scripts' / 'validate.sql').read_text())
             counts = {
                 table: connection.execute(f'SELECT count(*) FROM supply_chain.{table}').fetchone()[0]
-                for table in ('part', 'contains', 'part_type', 'planned_contains', 'part_type_match')
+                for table in ('part', 'contains', 'part_type', 'planned_contains',
+                              'part_type_match', 'site', 'planned_production_at')
             }
             placeholders = connection.execute(
                 'SELECT count(*) FROM supply_chain.part WHERE is_placeholder'
+            ).fetchone()[0]
+            suspect_sites = connection.execute(
+                'SELECT count(*) FROM supply_chain.site WHERE is_suspect'
             ).fetchone()[0]
             connection.execute('COMMIT')
         except Exception:
@@ -36,6 +40,7 @@ def main():
     print(f"  {counts['part']} parts ({placeholders} placeholders), {counts['contains']} as-built relationships")
     print(f"  {counts['part_type']} planned types, {counts['planned_contains']} planned relationships")
     print(f"  {counts['part_type_match']} inferred instance-to-type matches")
+    print(f"  {counts['site']} site IDs ({suspect_sites} suspect), {counts['planned_production_at']} planned production links")
     print(f'Database: {output}')
 
 

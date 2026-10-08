@@ -31,3 +31,16 @@ OPTIONAL MATCH (p)-[m:matches_type]->(:part_type)
 WITH p, count(m) AS matches
 WHERE matches = 0
 RETURN count(p) AS unmatched_source_parts;
+
+// Expected: 13 site IDs (12 pass the basic ID shape check, 1 is suspect).
+MATCH (s:site)
+RETURN count(s) AS sites;
+
+// Expected: 41. Includes the source link to the suspect ID BPN.
+MATCH (:part_type)-[r:planned_production_at]->(:site)
+RETURN count(r) AS planned_production_links;
+
+// Inspect the questionable source value. Expected: one row, site_id = BPN.
+MATCH (t:part_type)-[:planned_production_at]->(s:site)
+WHERE s.is_suspect = true
+RETURN t.name, s.site_id;

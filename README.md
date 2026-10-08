@@ -1,8 +1,8 @@
 # PuppyGraph Supply Chain Demo
 
-Explore how vehicle parts, product designs, and material dependencies connect using **PuppyGraph**, **DuckDB**, and Eclipse Tractus-X test data.
+Explore how vehicle parts, product designs, material dependencies, and production sites connect using **PuppyGraph**, **DuckDB**, and Eclipse Tractus-X test data.
 
-The demo follows a vehicle's battery assembly down to an individual cell, then connects that cell to a planned part type and its cathode material dependency. It demonstrates how graph queries can follow several levels of relationships and connect records from two datasets.
+The demo explores the component and material requirements of three vehicle models, including shared dependencies and the sites recorded for their planned production. A separate example connects an individual vehicle assembly to its planned material dependency.
 
 ## What this demo shows
 
@@ -20,11 +20,12 @@ You can use the included queries to answer:
 1. What parts belong to an assembly?
 2. Which components connect a planned vehicle model to a material?
 3. Which supplied parts match a planned type?
-4. How can an assembly be connected to a planned material dependency?
+4. Which sites are associated with producing those components?
+5. How can an assembly be connected to a planned material dependency?
 
 ## How it works
 
-The Python loader converts the two source JSON files into five DuckDB tables. PuppyGraph reads those tables through the mapping in `schema.json` and exposes them as a graph for Cypher queries. DuckDB runs as an embedded database; PuppyGraph runs in Docker.
+The Python loader converts the two source JSON files into seven DuckDB tables. PuppyGraph reads those tables through the mapping in `schema.json` and exposes them as a graph for Cypher queries. DuckDB runs as an embedded database; PuppyGraph runs in Docker.
 
 | Graph label | Meaning | Count |
 | --- | --- | ---: |
@@ -33,8 +34,10 @@ The Python loader converts the two source JSON files into five DuckDB tables. Pu
 | `contains` | An assembly contains a child part | 765 |
 | `planned_contains` | A planned type depends on a component or material type | 70 |
 | `matches_type` | A supplied part matches one planned type by partner and part number | 266 |
+| `site` | Site IDs from the dedicated planned-site records | 13 |
+| `planned_production_at` | A type has a planned production function at a site | 41 |
 
-Both containment relationships point **from parent to child**. A `matches_type` relationship points **from part to planned type**. The graph has **541 nodes and 1,101 edges**.
+Both containment relationships point **from parent to child**. A `matches_type` relationship points **from part to planned type**. A `planned_production_at` relationship points **from planned type to site**. The graph has **554 nodes and 1,142 edges**, including one flagged site ID (`BPN`).
 
 ## Getting started
 
@@ -67,6 +70,7 @@ Validation passed:
   499 parts (5 placeholders), 765 as-built relationships
   42 planned types, 70 planned relationships
   266 inferred instance-to-type matches
+  13 site IDs (1 suspect), 41 planned production links
 ```
 
 ### Start PuppyGraph
@@ -91,7 +95,7 @@ The query files are numbered in the order below. The final query brings the two 
 
 File: [`queries/01-check-counts.cypher`](queries/01-check-counts.cypher)
 
-These queries count each node and relationship label. Compare the results with the table above before exploring the graph. Additional checks return **5 placeholders** and **228 supplied parts without a type match**; neither means the upload failed.
+These queries count each node and relationship label. Compare the results with the table above before exploring the graph. Additional checks return **5 placeholders**, **228 supplied parts without a type match**, and **one suspect site ID** (`BPN`). These reflect the source data rather than an upload failure.
 
 ### 2. Inspect parts and assembly relationships
 
@@ -101,37 +105,35 @@ The first query lists 25 supplied parts with their IDs, names, and countries. Th
 
 Use this to understand the records and edge direction. Repeated names identify different records, so use IDs to distinguish them. This is a general sample; the later queries select specific paths for a clearer example.
 
-### 3. Explore vehicle components and material dependencies
+### 3. Explore vehicle requirements and production sites
 
 File: [`queries/03-planned-dependencies.cypher`](queries/03-planned-dependencies.cypher)
 
-**Question:** What components and materials do different vehicle models depend on, and which dependencies do they share?
+**Question:** What components and materials do vehicle models share, and where is their production planned?
+
+The first query follows every dependency branch for Models A, B, and C, up to five levels deep. Explore batteries, gearboxes, electronics, and tires, then follow their dependencies to materials such as sealant, plastics, glue, and natural rubber. Models A and B share gearbox and ECU types; Models B and C share a tire type.
+
+The second query adds production sites:
 
 ```cypher
-MATCH path = (product:part_type)-[:planned_contains*1..5]->(dependency:part_type)
-WHERE product.name IN [
+MATCH dependencies = (vehicle:part_type)-[:planned_contains*0..5]->(component:part_type)
+WHERE vehicle.name IN [
   'Vehicle Model A',
   'Vehicle Model B',
   'Vehicle Model C'
 ]
-RETURN path;
+OPTIONAL MATCH production = (component)-[:planned_production_at]->(site:site)
+WHERE site.is_suspect = false
+RETURN dependencies, production;
 ```
 
-The query starts from three vehicle models and follows every outgoing
-`planned_contains` branch up to five levels deep. Returning the paths
-displays the intermediate components and their connections in the graph view.
+`dependencies` follows each model's component and material requirements. The `0..5` range includes the vehicle itself so its own site can appear. `production` adds each reached type's planned production site. `OPTIONAL MATCH` keeps the dependency path even when no usable site is recorded.
 
-Explore branches covering batteries, gearboxes, electronics, and tires,
-then follow them down to dependencies such as cathode material, sealant,
-plastics, glue, and natural rubber.
+Use the graph view to see components converge on shared site nodes. For example, the battery, module, and cell link to `BPNS000004711DMY`, while cathode material links to `BPNS00000003B0Q0`. Site labels use the original IDs because the source does not supply factory names in these records.
 
-Shared components connect the models: Models A and B share gearbox and
-ECU types, while Models B and C share a tire type. Each arrow points from
-a product or component to something it requires.
+The third query returns a table of vehicle models, component IDs and names, site IDs, and validity dates. It removes repeated assignments caused by reaching a component along several paths.
 
-Relationships include `quantity` and `unit` properties. These describe
-direct requirements; the query does not calculate total material
-requirements across multiple levels.
+These links mean **planned production at a site**. They do not establish site ownership, current production, or shipments between factories. Quantities on `planned_contains` remain direct requirements; these three queries do not calculate total material requirements.
 
 ### 4. See which parts match each planned type
 
@@ -188,7 +190,9 @@ Both datasets are synthetic test data from Eclipse Tractus-X. Original filenames
 - **Matching:** Both business partner (`bpnl`) and manufacturer part number must match exactly. Empty values and keys identifying multiple planned types are excluded. Every inferred edge records `match_basis = 'business_partner_and_part_number'` and `is_inferred = true`.
 - **Missing records:** The instance file supplies 494 records. Five additional nodes represent referenced children whose details are absent; these have `is_placeholder = true`.
 - **Time and versions:** Matches do not check revisions or temporal validity. Planned validity dates are retained, but queries explore the historical snapshot without filtering to today's date.
-- **Scope:** The loader uses the serial part, batch, part-as-planned, and as-built/as-planned bill-of-materials models. Metadata, generator helpers, and other aspect models are not mapped.
+- **Production sites:** Only the dedicated `PartSiteInformationAsPlanned` 1.0.0 model is used, selecting records with `function = 'production'`. Its type-to-site links and validity dates are explicit source data. The conflicting embedded site list in `PartAsPlanned` is not merged. Business ownership is not inferred.
+- **Site quality:** The 41 production links cover 41 of the 42 planned types. Twelve distinct site IDs pass a basic `BPNS` plus 12 uppercase-letter/digit shape check; the thirteenth is the literal `BPN`, retained with `is_suspect = true`. This check does not verify registration. The vehicle queries hide suspect site links while keeping the component paths.
+- **Scope:** The loader uses serial part, batch, part-as-planned, as-built/as-planned bill-of-materials, and dedicated planned-site models. Metadata, generator helpers, and other aspect models are not mapped.
 
 ## Stop or reload the demo
 
@@ -205,7 +209,7 @@ bash scripts/start.sh
 
 Always stop PuppyGraph before writing to its DuckDB file. Loading and validation run in one transaction; failures roll back table changes. Expected counts are specific to the bundled datasets.
 
-When upgrading an older copy, stop its container before replacing repository files, preserve your `.git` directory and `.venv`, and use the commands above. Running `start.sh` reapplies the mapping so new labels become available.
+When adding sites to an existing copy, stop its container before replacing the supplied files at their matching repository paths. Then use the commands above. The original JSON files stay unchanged. The loader creates the new site tables, and `start.sh` uploads the expanded mapping; restarting alone will not add the site labels.
 
 ## Repository structure
 
@@ -218,7 +222,7 @@ When upgrading an older copy, stop its container before replacing repository fil
 | `schema.json` | Map tables, IDs, and properties to graph labels |
 | `docker-compose.yaml` | Configure the local PuppyGraph container |
 | `requirements.txt` | Pin the Python dependency |
-| `queries/` | Cypher queries used in the walkthrough |
+| `queries/` | Cypher walkthrough, including vehicle dependencies and planned production sites |
 | `third_party/tractusx/` | Upstream authorship, notices, and license texts |
 
 The generated database and Python environment are excluded from Git. The graph labels map to tables of the same name in the `supply_chain` schema, except `matches_type`, which maps to `part_type_match`.

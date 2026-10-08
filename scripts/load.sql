@@ -212,3 +212,60 @@ JOIN unique_type_keys k
 WHERE NOT p.is_placeholder
   AND nullif(p.business_partner_id, '') IS NOT NULL
   AND nullif(p.manufacturer_part_id, '') IS NOT NULL;
+
+-- Use the dedicated site aspect consistently. The embedded site list inside
+-- PartAsPlanned contains different example IDs and is intentionally not merged.
+CREATE OR REPLACE TEMP TABLE source_site_models AS
+SELECT s.item ->> '$.catenaXId' AS type_id,
+       m.key AS model_index, m.value AS model
+FROM source_type_items s,
+     json_each(s.item,
+       '$."urn:samm:io.catenax.part_site_information_as_planned:1.0.0#PartSiteInformationAsPlanned"') m;
+
+SELECT CASE WHEN count(*) = 0 THEN true
+       ELSE error('Site model ID disagrees with containing type ID') END
+FROM source_site_models
+WHERE (model ->> '$.catenaXId') IS DISTINCT FROM type_id;
+
+CREATE OR REPLACE TEMP TABLE source_production_sites AS
+SELECT m.type_id, m.model_index, s.key AS site_index,
+       s.value ->> '$.catenaXsiteId' AS site_id,
+       s.value ->> '$.function' AS site_function,
+       s.value ->> '$.functionValidFrom' AS valid_from,
+       s.value ->> '$.functionValidUntil' AS valid_until
+FROM source_site_models m, json_each(m.model, '$.sites') s
+WHERE s.value ->> '$.function' = 'production';
+
+DROP TABLE IF EXISTS supply_chain.planned_production_at;
+DROP TABLE IF EXISTS supply_chain.site;
+CREATE TABLE supply_chain.site (
+    site_id VARCHAR PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    is_suspect BOOLEAN NOT NULL
+);
+INSERT INTO supply_chain.site
+SELECT DISTINCT site_id, site_id,
+       NOT regexp_full_match(site_id, 'BPNS[A-Z0-9]{12}')
+FROM source_production_sites;
+-- Keep the original ID, including the source's 'BPN' value, but flag IDs that
+-- fail this basic shape check. This does not verify site registration/ownership.
+-- No factory names or owners are inferred from a part's business partner.
+
+CREATE TABLE supply_chain.planned_production_at (
+    edge_id VARCHAR PRIMARY KEY,
+    type_id VARCHAR NOT NULL,
+    site_id VARCHAR NOT NULL,
+    site_function VARCHAR NOT NULL,
+    valid_from VARCHAR,
+    valid_until VARCHAR,
+    source_model VARCHAR NOT NULL,
+    source_model_index INTEGER NOT NULL,
+    source_site_index INTEGER NOT NULL
+);
+INSERT INTO supply_chain.planned_production_at
+SELECT md5(concat_ws('|', 'planned_production_at', type_id,
+                    model_index, site_index, site_id)),
+       type_id, site_id, site_function, valid_from, valid_until,
+       'urn:samm:io.catenax.part_site_information_as_planned:1.0.0#PartSiteInformationAsPlanned',
+       CAST(model_index AS INTEGER), CAST(site_index AS INTEGER)
+FROM source_production_sites;

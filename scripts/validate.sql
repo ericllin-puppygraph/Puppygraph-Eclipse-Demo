@@ -43,3 +43,24 @@ JOIN supply_chain.part_type t ON t.type_id = m.type_id
 WHERE (SELECT count(*) FROM supply_chain.part_type other
        WHERE other.business_partner_id = t.business_partner_id
          AND other.manufacturer_part_id = t.manufacturer_part_id) <> 1;
+
+-- Preserve all dedicated production-site records, flagging questionable IDs.
+SELECT CASE WHEN count(*) = 13 AND count(*) FILTER (WHERE is_suspect) = 1 THEN true
+       ELSE error('Expected 13 site IDs, including one suspect ID') END
+FROM supply_chain.site;
+SELECT CASE WHEN count(*) = 41 AND count(DISTINCT type_id) = 41 THEN true
+       ELSE error('Expected 41 planned production links for 41 types') END
+FROM supply_chain.planned_production_at;
+SELECT CASE WHEN count(*) = 0 THEN true
+       ELSE error('Production link has a missing endpoint or wrong function') END
+FROM supply_chain.planned_production_at e
+LEFT JOIN supply_chain.part_type t ON t.type_id = e.type_id
+LEFT JOIN supply_chain.site s ON s.site_id = e.site_id
+WHERE t.type_id IS NULL OR s.site_id IS NULL OR e.site_function <> 'production';
+SELECT CASE WHEN count(*) = 0 THEN true
+       ELSE error('Site identifier quality flag is inconsistent') END
+FROM supply_chain.site
+WHERE is_suspect IS DISTINCT FROM (NOT regexp_full_match(site_id, 'BPNS[A-Z0-9]{12}'));
+SELECT CASE WHEN count(*) = 1 THEN true
+       ELSE error('Expected one production link to the source ID BPN') END
+FROM supply_chain.planned_production_at WHERE site_id = 'BPN';

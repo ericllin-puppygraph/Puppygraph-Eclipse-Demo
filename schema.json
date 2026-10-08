@@ -164,6 +164,51 @@
           "type": "STRING"
         }
       ]
+    },
+    {
+      "label": "site",
+      "dataSourceGroup": {
+        "externalDataSource": {
+          "enabled": true,
+          "catalog": "duckdb_data",
+          "schema": "supply_chain",
+          "table": "site",
+          "mappedField": [
+            {
+              "sourceFieldName": "site_id",
+              "targetFieldName": "site_id"
+            },
+            {
+              "sourceFieldName": "name",
+              "targetFieldName": "name"
+            },
+            {
+              "sourceFieldName": "is_suspect",
+              "targetFieldName": "is_suspect"
+            }
+          ]
+        }
+      },
+      "id": [
+        {
+          "name": "site_id",
+          "type": "STRING"
+        }
+      ],
+      "attribute": [
+        {
+          "name": "site_id",
+          "type": "STRING"
+        },
+        {
+          "name": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "is_suspect",
+          "type": "BOOLEAN"
+        }
+      ]
     }
   ],
   "edge": [
@@ -476,6 +521,113 @@
       "toKey": [
         {
           "name": "type_id",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "label": "planned_production_at",
+      "dataSourceGroup": {
+        "externalDataSource": {
+          "enabled": true,
+          "catalog": "duckdb_data",
+          "schema": "supply_chain",
+          "table": "planned_production_at",
+          "mappedField": [
+            {
+              "sourceFieldName": "edge_id",
+              "targetFieldName": "edge_id"
+            },
+            {
+              "sourceFieldName": "type_id",
+              "targetFieldName": "type_id"
+            },
+            {
+              "sourceFieldName": "site_id",
+              "targetFieldName": "site_id"
+            },
+            {
+              "sourceFieldName": "site_function",
+              "targetFieldName": "site_function"
+            },
+            {
+              "sourceFieldName": "valid_from",
+              "targetFieldName": "valid_from"
+            },
+            {
+              "sourceFieldName": "valid_until",
+              "targetFieldName": "valid_until"
+            },
+            {
+              "sourceFieldName": "source_model",
+              "targetFieldName": "source_model"
+            },
+            {
+              "sourceFieldName": "source_model_index",
+              "targetFieldName": "source_model_index"
+            },
+            {
+              "sourceFieldName": "source_site_index",
+              "targetFieldName": "source_site_index"
+            }
+          ]
+        }
+      },
+      "id": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        }
+      ],
+      "attribute": [
+        {
+          "name": "edge_id",
+          "type": "STRING"
+        },
+        {
+          "name": "type_id",
+          "type": "STRING"
+        },
+        {
+          "name": "site_id",
+          "type": "STRING"
+        },
+        {
+          "name": "site_function",
+          "type": "STRING"
+        },
+        {
+          "name": "valid_from",
+          "type": "STRING"
+        },
+        {
+          "name": "valid_until",
+          "type": "STRING"
+        },
+        {
+          "name": "source_model",
+          "type": "STRING"
+        },
+        {
+          "name": "source_model_index",
+          "type": "INT"
+        },
+        {
+          "name": "source_site_index",
+          "type": "INT"
+        }
+      ],
+      "fromNodeLabel": "part_type",
+      "toNodeLabel": "site",
+      "fromKey": [
+        {
+          "name": "type_id",
+          "type": "STRING"
+        }
+      ],
+      "toKey": [
+        {
+          "name": "site_id",
           "type": "STRING"
         }
       ]
